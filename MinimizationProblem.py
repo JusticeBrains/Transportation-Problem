@@ -143,6 +143,7 @@ def loop_pivoting(bfs, loop):
         
     return new_bfs
 
+# Final computation
 def transportation_simplex_method(supply, demand, costs):
     balanced_supply, balanced_demand, balanced_costs = get_balanced_transportation_problem(
         model_supply, model_demand, costs
