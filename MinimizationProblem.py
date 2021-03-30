@@ -143,7 +143,7 @@ def loop_pivoting(bfs, loop):
         
     return new_bfs
 
-def transportation_simplex_method(supply, demand, costs):
+def transportation_solution(supply, demand, costs):
     balanced_supply, balanced_demand, balanced_costs = get_balanced_transportation_problem(
         model_supply, model_demand, costs
     )
@@ -188,7 +188,7 @@ if __name__ == "__main__":
     print(f'\nBasic Feasible Solution:\n {np.array(bfs, dtype=object)}')
 
     get_balanced_transportation_problem(model_supply,model_demand,costs)
-    solution = transportation_simplex_method(model_supply, model_demand, costs)
+    solution = transportation_solution(model_supply, model_demand, costs)
     print(f"\n Final Tableau:\n {solution}")
     print(f'Optimal Solution: {get_total_cost(costs, solution)}')
 
