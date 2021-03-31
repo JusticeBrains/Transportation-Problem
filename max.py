@@ -1,27 +1,9 @@
-# -*- coding: utf-8 -*-
-
-# -- Sheet --
-
 import numpy as np
-
-def get_balanced_transportation_problem(supply, demand, costs):
-    total_supply = sum(supply)
-    total_demand = sum(demand)
-    
-    if total_supply < total_demand:
-        new_supply = supply + [total_demand - total_supply]
-        new_costs = costs 
-        return new_supply, demand, new_costs
-    if total_supply > total_demand:
-        new_demand = demand + [total_supply - total_demand]
-        new_costs = costs + [[0 for _ in demand]]
-        return supply, new_demand, new_costs
-    return supply, demand, costs
 
 def userCostInput():
     sp_row = int(input('Enter length row value: '))
     dm_column = int(input('Enter length column value: '))
-    userCostInput.costs = [[int(input("Enter Cost value by row: ")) for x in range(dm_column)] for y in range(sp_row)]
+    userCostInput.costs = [[int(input()) for x in range(dm_column)] for y in range(sp_row)]
 
 def userSupplyAndDemand():
     supply = int(input("Enter the length of supply values: "))
@@ -29,12 +11,31 @@ def userSupplyAndDemand():
     userSupplyAndDemand.Supply = [int(input("Enter Supply values: ")) for x in range(supply)]
     userSupplyAndDemand.Demand = [int(input("Enter Demand values: ")) for x in range(demand)]
 
+cost = None
+def verify_problem(costs):
+    global cost
+    # making the costs matrix a numpy array
+    array = np.array(costs)
+    maxVal = np.max(costs)
+    array = maxVal - array
+    verify_problem.cost = array.tolist()
+    print(f'New Cost: {verify_problem.cost}')
+    new_costs = verify_problem.cost
+    return new_costs
 
-
-
-
-# ## NorthWest Corner Method
-
+def get_balanced_transportation_problem(model_supply,model_demand, Costs):
+    total_supply = sum(model_supply)
+    total_demand = sum(model_demand)
+    
+    if total_supply < total_demand:
+        new_supply = model_supply + [total_demand - total_supply]
+        new_costs = Costs 
+        return new_supply, model_demand, new_costs
+    if total_supply > total_demand:
+        new_demand = model_demand + [total_supply - total_demand]
+        new_costs = Costs + [[0 for _ in model_demand]]
+        return model_supply, new_demand, new_costs
+    return model_supply, model_demand, Costs
 
 def north_west_corner(model_supply, model_demand):
     supply_copy = model_supply.copy()
@@ -55,14 +56,9 @@ def north_west_corner(model_supply, model_demand):
             j += 1
     return bfs
 
-
-
-# ## Stepping Stone
-
-
-def get_us_and_vs(bfs, costs):
-    us = [None] * len(costs)
-    vs = [None] * len(costs[0])
+def get_us_and_vs(bfs, Costs):
+    us = [None] * len(Costs)
+    vs = [None] * len(Costs[0])
     us[0] = 0
     bfs_copy = bfs.copy()
     while len(bfs_copy) > 0:
@@ -70,7 +66,7 @@ def get_us_and_vs(bfs, costs):
             i, j = bv[0]
             if us[i] is None and vs[j] is None: continue
                 
-            cost = costs[i][j]
+            cost = Costs[i][j]
             if us[i] is None:
                 us[i] = cost - vs[j]
             else: 
@@ -80,9 +76,9 @@ def get_us_and_vs(bfs, costs):
             
     return us, vs 
 
-def get_ws(bfs, costs, us, vs):
+def get_ws(bfs, Costs, us, vs):
     ws = []
-    for i, row in enumerate(costs):
+    for i, row in enumerate(Costs):
         for j, cost in enumerate(row):
             non_basic = all([p[0] != i or p[1] != j for p, v in bfs])
             if non_basic:
@@ -112,6 +108,7 @@ def get_possible_next_nodes(loop, not_visited):
         if row_move: return nodes_in_column
         return nodes_in_row
 
+
 def get_loop(bv_positions, ev_position):
     def inner(loop):
         if len(loop) > 3:
@@ -125,6 +122,7 @@ def get_loop(bv_positions, ev_position):
             if new_loop: return new_loop
     
     return inner([ev_position])
+
 
 def loop_pivoting(bfs, loop):
     even_cells = loop[0::2]
@@ -143,9 +141,9 @@ def loop_pivoting(bfs, loop):
         
     return new_bfs
 
-def transportation_solution(supply, demand, costs):
+def transportation_stepping_stone(model_supply, model_demand, Costs):
     balanced_supply, balanced_demand, balanced_costs = get_balanced_transportation_problem(
-        model_supply, model_demand, costs
+        model_supply, model_demand, Costs
     )
     def inner(bfs):
         us, vs = get_us_and_vs(bfs, balanced_costs)
@@ -157,15 +155,15 @@ def transportation_solution(supply, demand, costs):
         return bfs
     
     basic_variables = inner(north_west_corner(balanced_supply, balanced_demand))
-    solution = np.zeros((len(costs), len(costs[0])))
+    solution = np.zeros((len(Costs), len(Costs[0])))
     for (i, j), v in basic_variables:
         solution[i][j] = v
 
     return solution
 
-def get_total_cost(costs, solution):
+def get_total_cost(Costs, solution):
     total_cost = 0
-    for i, row in enumerate(costs):
+    for i, row in enumerate(Costs):
         for j, cost in enumerate(row):
             total_cost += cost * solution[i][j]
     return total_cost
@@ -173,22 +171,18 @@ def get_total_cost(costs, solution):
 
 if __name__ == "__main__":
     userCostInput()
-
     costs = userCostInput.costs
-    print(f'Cost Values: \n {np.array(costs, dtype=object)}')
-
+    costs
     userSupplyAndDemand()
-
     model_supply = userSupplyAndDemand.Supply
     model_demand = userSupplyAndDemand.Demand
-    print(f'\nSupply: {model_supply}')
-    print(f'Demand: {model_demand}')
-
-    bfs = north_west_corner(model_supply, model_demand)
-    print(f'\nBasic Feasible Solution:\n {np.array(bfs, dtype=object)}')
-
-    get_balanced_transportation_problem(model_supply,model_demand,costs)
-    solution = transportation_solution(model_supply, model_demand, costs)
-    print(f"\n Final Tableau:\n {solution}")
-    print(f'Optimal Solution: {get_total_cost(costs, solution)}')
-
+    print(model_supply)
+    print(model_demand)
+    Costs = verify_problem(costs)
+    balanced_model = get_balanced_transportation_problem(model_supply, model_demand, Costs)
+    balanced_model
+    bfs = north_west_corner(model_supply,model_demand)
+    print(bfs)
+    solution = transportation_stepping_stone(model_supply, model_demand, Costs)
+    print(solution)
+    print('Optimal Solution: ', get_total_cost(Costs, solution))

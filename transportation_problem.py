@@ -2,15 +2,23 @@
 
 # -- Sheet --
 
+# # Transportation Problem
+
+
+# ## Balancing
+
+
 import numpy as np
 
-def get_balanced_transportation_problem(supply, demand, costs):
+def get_balanced_tp(supply, demand, costs, penalties = None):
     total_supply = sum(supply)
     total_demand = sum(demand)
     
     if total_supply < total_demand:
+        if penalties is None:
+            raise Exception('Supply less than demand, penalties required')
         new_supply = supply + [total_demand - total_supply]
-        new_costs = costs 
+        new_costs = costs + [penalties]
         return new_supply, demand, new_costs
     if total_supply > total_demand:
         new_demand = demand + [total_supply - total_demand]
@@ -18,46 +26,57 @@ def get_balanced_transportation_problem(supply, demand, costs):
         return supply, new_demand, new_costs
     return supply, demand, costs
 
-def userCostInput():
-    sp_row = int(input('Enter length row value: '))
-    dm_column = int(input('Enter length column value: '))
-    userCostInput.costs = [[int(input("Enter Cost value by row: ")) for x in range(dm_column)] for y in range(sp_row)]
-
-def userSupplyAndDemand():
-    supply = int(input("Enter the length of supply values: "))
-    demand = int(input("Enter the length of demand values: "))
-    userSupplyAndDemand.Supply = [int(input("Enter Supply values: ")) for x in range(supply)]
-    userSupplyAndDemand.Demand = [int(input("Enter Demand values: ")) for x in range(demand)]
+# supply less than demand
 
 
+supply = [40, 30]
+demand = [30, 50]
+costs = [
+    [3, 4],
+    [2, 4]
+]
+penalties = [3, 1]
+get_balanced_tp(supply, demand, costs, penalties)
+
+# demand less than supply
 
 
+supply = [40, 30]
+demand = [30, 30]
+costs = [
+    [3, 4],
+    [2, 4]
+]
+get_balanced_tp(supply, demand, costs, penalties)
 
-# ## NorthWest Corner Method
+# ## North West Corner Method
 
 
-def north_west_corner(model_supply, model_demand):
-    supply_copy = model_supply.copy()
-    demand_copy = model_demand.copy()
+def north_west_corner(supply, demand):
+    supply_copy = supply.copy()
+    demand_copy = demand.copy()
     i = 0
     j = 0
     bfs = []
-    while len(bfs) < len(model_supply) + len(model_demand) - 1:
+    while len(bfs) < len(supply) + len(demand) - 1:
         s = supply_copy[i]
         d = demand_copy[j]
         v = min(s, d)
         supply_copy[i] -= v
         demand_copy[j] -= v
         bfs.append(((i, j), v))
-        if supply_copy[i] == 0 and i < len(model_supply) - 1:
+        if supply_copy[i] == 0 and i < len(supply) - 1:
             i += 1
-        elif demand_copy[j] == 0 and j < len(model_demand) - 1:
+        elif demand_copy[j] == 0 and j < len(demand) - 1:
             j += 1
     return bfs
 
+supply = [30, 70, 50]
+demand = [40, 30, 40, 40]
+bfs = north_west_corner(supply, demand)
+print(bfs)
 
-
-# ## Stepping Stone
+# ## Transportation Simplex Method
 
 
 def get_us_and_vs(bfs, costs):
@@ -78,7 +97,7 @@ def get_us_and_vs(bfs, costs):
             bfs_copy.pop(index)
             break
             
-    return us, vs 
+    return us, vs      
 
 def get_ws(bfs, costs, us, vs):
     ws = []
@@ -143,9 +162,9 @@ def loop_pivoting(bfs, loop):
         
     return new_bfs
 
-def transportation_solution(supply, demand, costs):
-    balanced_supply, balanced_demand, balanced_costs = get_balanced_transportation_problem(
-        model_supply, model_demand, costs
+def transportation_simplex_method(supply, demand, costs, penalties = None):
+    balanced_supply, balanced_demand, balanced_costs = get_balanced_tp(
+        supply, demand, costs
     )
     def inner(bfs):
         us, vs = get_us_and_vs(bfs, balanced_costs)
@@ -170,25 +189,38 @@ def get_total_cost(costs, solution):
             total_cost += cost * solution[i][j]
     return total_cost
 
+costs = [
+    [ 2, 2, 2, 1],
+    [10, 8, 5, 4],
+    [ 7, 6, 6, 8]
+]
+supply = [30, 70, 50]
+demand = [40, 30, 40, 40]
+solution = transportation_simplex_method(supply, demand, costs)
+print(solution)
+print('total cost: ', get_total_cost(costs, solution))
 
-if __name__ == "__main__":
-    userCostInput()
+transportation_simplex_method(
+    [10, 80, 15, 40],
+    [75, 20, 50],
+    [
+        [5, 1, 7],
+        [6, 4, 6],
+        [3, 2, 5],
+        [5, 3, 2]
+    ]
+)
 
-    costs = userCostInput.costs
-    print(f'Cost Values: \n {np.array(costs, dtype=object)}')
+transportation_simplex_method(
+    [0, 0, 0, 0],
+    [0, 0, 0],
+    [
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [0, 0, 0]
+    ]
+)
 
-    userSupplyAndDemand()
 
-    model_supply = userSupplyAndDemand.Supply
-    model_demand = userSupplyAndDemand.Demand
-    print(f'\nSupply: {model_supply}')
-    print(f'Demand: {model_demand}')
-
-    bfs = north_west_corner(model_supply, model_demand)
-    print(f'\nBasic Feasible Solution:\n {np.array(bfs, dtype=object)}')
-
-    get_balanced_transportation_problem(model_supply,model_demand,costs)
-    solution = transportation_solution(model_supply, model_demand, costs)
-    print(f"\n Final Tableau:\n {solution}")
-    print(f'Optimal Solution: {get_total_cost(costs, solution)}')
 
